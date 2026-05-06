@@ -9,6 +9,8 @@ const statusText = document.getElementById("statusText");
 const summary = document.getElementById("summary");
 const pageWidthInput = document.getElementById("pageWidth");
 const autoDownloadInput = document.getElementById("autoDownload");
+const backgroundColorInput = document.getElementById("backgroundColor");
+const backgroundModeInput = document.getElementById("backgroundMode");
 
 const state = {
   entries: [],
@@ -73,10 +75,11 @@ async function ingestFiles(fileList) {
   results.replaceChildren();
 
   const pageWidthMm = getPageWidthMm();
+  const backgroundColor = backgroundModeInput.value === "color" ? backgroundColorInput.value : null;
   state.entries = [];
 
   for (const file of files) {
-    const entry = await processFile(file, pageWidthMm);
+    const entry = await processFile(file, pageWidthMm, backgroundColor);
     state.entries.push(entry);
     results.append(renderEntry(entry));
     updateSummary();
@@ -100,7 +103,7 @@ function getPageWidthMm() {
   return value;
 }
 
-async function processFile(file, pageWidthMm) {
+async function processFile(file, pageWidthMm, backgroundColor) {
   const bitmap = await createImageBitmap(file);
   const canvas = document.createElement("canvas");
   canvas.width = bitmap.width;
@@ -121,6 +124,13 @@ async function processFile(file, pageWidthMm) {
     format: [pageWidthMm, pageHeightMm],
     compress: true,
   });
+
+  // Add background if specified
+  if (backgroundColor) {
+    const rgb = hexToRgb(backgroundColor);
+    pdf.setFillColor(rgb.r, rgb.g, rgb.b);
+    pdf.rect(0, 0, pageWidthMm, pageHeightMm, "F");
+  }
 
   const imageDataUrl = canvas.toDataURL("image/png");
   pdf.addImage(imageDataUrl, "PNG", 0, 0, pageWidthMm, pageHeightMm, undefined, "FAST");
@@ -505,6 +515,15 @@ function addNeighbor(map, key, point) {
 
 function edgeId(startKey, endKey) {
   return startKey < endKey ? `${startKey}|${endKey}` : `${endKey}|${startKey}`;
+}
+
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : { r: 255, g: 255, b: 255 };
 }
 
 updateSummary();

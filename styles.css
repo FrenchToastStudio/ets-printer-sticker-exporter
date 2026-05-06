@@ -93,6 +93,31 @@ h1 {
   backdrop-filter: blur(14px);
 }
 
+.color-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.color-input-group input[type="color"] {
+  width: 48px;
+  height: 40px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.color-input-group select {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--bg-soft);
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
 .hero-card,
 .status,
 .dropzone,

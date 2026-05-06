@@ -28,12 +28,22 @@
             <span>Page width in mm</span>
             <input id="pageWidth" type="number" min="10" step="1" value="100" />
           </label>
+          <label class="field">
+            <span>Background color</span>
+            <div class="color-input-group">
+              <input id="backgroundColor" type="color" value="#ffffff" />
+              <select id="backgroundMode">
+                <option value="none">Transparent</option>
+                <option value="color" selected>Uniform color</option>
+              </select>
+            </div>
+          </label>
           <label class="toggle">
             <input id="autoDownload" type="checkbox" checked />
             <span>Download each PDF after processing</span>
           </label>
           <p class="note">
-            The PDF keeps transparency and draws the outer alpha contour as a magenta cut line.
+            The PDF draws the outer alpha contour as a magenta cut line. Optional uniform background can be added.
           </p>
         </div>
       </section>
