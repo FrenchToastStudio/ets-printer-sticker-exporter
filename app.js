@@ -1,6 +1,9 @@
-const SUPPORTED_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+const SUPPORTED_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "application/pdf"]);
 const PAGE_WIDTH_DEFAULT_MM = 100;
 const OUTLINE_COLOR = [255, 0, 255];
+
+// Initialize PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("fileInput");
@@ -67,7 +70,7 @@ async function ingestFiles(fileList) {
   const files = [...fileList].filter((file) => SUPPORTED_TYPES.has(file.type));
 
   if (!files.length) {
-    setStatus("Select at least one PNG, JPG, or WebP image.");
+    setStatus("Select at least one PNG, JPG, WebP image, or PDF file.");
     return;
   }
 
@@ -77,13 +80,29 @@ async function ingestFiles(fileList) {
   const pageWidthMm = getPageWidthMm();
   const backgroundColor = backgroundModeInput.value === "color" ? backgroundColorInput.value : null;
   state.entries = [];
-
+  
+  let totalItemsToProcess = 0;
+  const processQueue = [];
+  
+  // Prepare queue - extract PDF pages
   for (const file of files) {
-    const entry = await processFile(file, pageWidthMm, backgroundColor);
+    if (file.type === "application/pdf") {
+      const pages = await extractPdfPages(file);
+      processQueue.push(...pages.map(blob => ({ blob, originalName: file.name })));
+      totalItemsToProcess += pages.length;
+    } else {
+      processQueue.push({ blob: file, originalName: file.name });
+      totalItemsToProcess += 1;
+    }
+  }
+
+  // Process all items
+  for (const item of processQueue) {
+    const entry = await processFile(item.blob, pageWidthMm, backgroundColor, item.originalName);
     state.entries.push(entry);
     results.append(renderEntry(entry));
     updateSummary();
-    setStatus(`Processed ${state.entries.length} of ${files.length} file${files.length === 1 ? "" : "s"}.`);
+    setStatus(`Processed ${state.entries.length} of ${totalItemsToProcess} item${totalItemsToProcess === 1 ? "" : "s"}.`);
 
     if (autoDownloadInput.checked) {
       triggerDownload(entry.pdfUrl, entry.pdfName);
@@ -103,7 +122,7 @@ function getPageWidthMm() {
   return value;
 }
 
-async function processFile(file, pageWidthMm, backgroundColor) {
+async function processFile(file, pageWidthMm, backgroundColor, originalName) {
   const bitmap = await createImageBitmap(file);
   const canvas = document.createElement("canvas");
   canvas.width = bitmap.width;
@@ -149,11 +168,12 @@ async function processFile(file, pageWidthMm, backgroundColor) {
     }
   }
 
-  const pdfName = `print_ready_${stripExtension(file.name)}.pdf`;
+  const sourceFileName = originalName || file.name;
+  const pdfName = `print_ready_${stripExtension(sourceFileName)}.pdf`;
   const pdfUrl = URL.createObjectURL(pdf.output("blob"));
 
   return {
-    name: file.name,
+    name: sourceFileName,
     pdfName,
     pdfUrl,
     previewUrl: imageDataUrl,
@@ -524,6 +544,36 @@ function hexToRgb(hex) {
     g: parseInt(result[2], 16),
     b: parseInt(result[3], 16)
   } : { r: 255, g: 255, b: 255 };
+}
+
+async function extractPdfPages(pdfFile) {
+  const arrayBuffer = await pdfFile.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+  const pages = [];
+
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum += 1) {
+    const page = await pdf.getPage(pageNum);
+    const scale = 2; // Higher scale for better quality
+    const viewport = page.getViewport({ scale });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    const context = canvas.getContext("2d");
+    await page.render({
+      canvasContext: context,
+      viewport: viewport,
+    }).promise;
+
+    const blob = await new Promise((resolve) => {
+      canvas.toBlob(resolve, "image/png");
+    });
+
+    pages.push(blob);
+  }
+
+  return pages;
 }
 
 updateSummary();

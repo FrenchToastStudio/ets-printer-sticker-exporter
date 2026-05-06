@@ -9,6 +9,7 @@
       content="Generate transparent sticker PDFs with cut contours directly in the browser."
     />
     <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script defer src="app.js"></script>
   </head>
@@ -19,7 +20,7 @@
           <p class="eyebrow">GitHub Pages ready</p>
           <h1>Sticker PDF Builder</h1>
           <p class="lede">
-            Drop PNG, JPG, or WebP artwork here and generate a transparent PDF with a cut contour
+            Drop PNG, JPG, PDF or WebP artwork here and generate a transparent PDF with a cut contour
             directly in the browser.
           </p>
         </div>
@@ -55,7 +56,7 @@
         </div>
         <div class="controls">
           <label class="button primary" for="fileInput">Choose files</label>
-          <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" multiple />
+          <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" multiple />
         </div>
       </section>
 
