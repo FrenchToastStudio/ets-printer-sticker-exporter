@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sticker PDF Builder</title>
+    <meta
+      name="description"
+      content="Generate transparent sticker PDFs with cut contours directly in the browser."
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">GitHub Pages ready</p>
+          <h1>Sticker PDF Builder</h1>
+          <p class="lede">
+            Drop PNG, JPG, or WebP artwork here and generate a transparent PDF with a cut contour
+            directly in the browser.
+          </p>
+        </div>
+        <div class="hero-card panel">
+          <label class="field">
+            <span>Page width in mm</span>
+            <input id="pageWidth" type="number" min="10" step="1" value="100" />
+          </label>
+          <label class="toggle">
+            <input id="autoDownload" type="checkbox" checked />
+            <span>Download each PDF after processing</span>
+          </label>
+          <p class="note">
+            The PDF keeps transparency and draws the outer alpha contour as a magenta cut line.
+          </p>
+        </div>
+      </section>
+
+      <section class="panel dropzone" id="dropzone">
+        <div>
+          <h2>Upload artwork</h2>
+          <p>Drop files here or use the picker. You can process multiple images at once.</p>
+        </div>
+        <div class="controls">
+          <label class="button primary" for="fileInput">Choose files</label>
+          <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" multiple />
+        </div>
+      </section>
+
+      <section class="status panel">
+        <div>
+          <p class="status-label">Status</p>
+          <p id="statusText">Waiting for files.</p>
+        </div>
+        <div id="summary" class="summary"></div>
+      </section>
+
+      <section id="results" class="results"></section>
+    </main>
+  </body>
+</html>
