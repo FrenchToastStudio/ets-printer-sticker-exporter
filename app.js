@@ -561,10 +561,34 @@ async function extractPdfPages(pdfFile) {
     canvas.height = viewport.height;
 
     const context = canvas.getContext("2d");
+    
+    // Render PDF with transparent background
     await page.render({
       canvasContext: context,
       viewport: viewport,
     }).promise;
+
+    // Extract image data and make background transparent
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    
+    // Detect the background color (usually white or light color in PDFs)
+    // We'll make it transparent by setting alpha to 0
+    const bgColor = detectBackgroundColor(imageData);
+    
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const a = data[i + 3];
+      
+      // If pixel is similar to background color, make it transparent
+      if (isColorSimilar(r, g, b, bgColor, 20)) {
+        data[i + 3] = 0; // Set alpha to 0
+      }
+    }
+    
+    context.putImageData(imageData, 0, 0);
 
     const blob = await new Promise((resolve) => {
       canvas.toBlob(resolve, "image/png");
@@ -574,6 +598,42 @@ async function extractPdfPages(pdfFile) {
   }
 
   return pages;
+}
+
+function detectBackgroundColor(imageData) {
+  const data = imageData.data;
+  const colorCounts = new Map();
+  
+  // Sample the image to find the most common color (likely background)
+  for (let i = 0; i < data.length; i += 4 * 16) { // Sample every 16th pixel
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const key = `${r},${g},${b}`;
+    
+    colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
+  }
+  
+  let maxCount = 0;
+  let bgColor = { r: 255, g: 255, b: 255 }; // Default to white
+  
+  for (const [key, count] of colorCounts) {
+    if (count > maxCount) {
+      maxCount = count;
+      const [r, g, b] = key.split(",").map(Number);
+      bgColor = { r, g, b };
+    }
+  }
+  
+  return bgColor;
+}
+
+function isColorSimilar(r1, g1, b1, color2, threshold) {
+  const dr = Math.abs(r1 - color2.r);
+  const dg = Math.abs(g1 - color2.g);
+  const db = Math.abs(b1 - color2.b);
+  
+  return dr <= threshold && dg <= threshold && db <= threshold;
 }
 
 updateSummary();
